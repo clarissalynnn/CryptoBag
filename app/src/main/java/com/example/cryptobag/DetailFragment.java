@@ -3,6 +3,7 @@ package com.example.cryptobag;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -75,10 +76,11 @@ public class DetailFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments().containsKey(ARG_ITEM_ID)) {
+            new GetCoinTask().execute();
 
             //try {
                 //create Retrofit instance & parse the retrieved Json using the Gson deserializer
-                Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.coinlore.net/").addConverterFactory(GsonConverterFactory.create()).build();
+                /*Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.coinlore.net/").addConverterFactory(GsonConverterFactory.create()).build();
 
                 //get service and call object for the request
                 CoinService service = retrofit.create(CoinService.class);
@@ -98,7 +100,8 @@ public class DetailFragment extends Fragment {
                             mCoin = coin;
                             break;
                         }
-                    } updateUi();
+                    }
+                    updateUi();
                     DetailFragment.this.getActivity().setTitle(mCoin.getName());
                 }
 
@@ -106,7 +109,7 @@ public class DetailFragment extends Fragment {
                 public void onFailure(Call<CoinLoreResponse> call, Throwable t) {
                     Log.d(TAG, "onFailure: FAILURE IS " + t.getLocalizedMessage());
                 }
-            });
+            });*/
 
 
 
@@ -126,14 +129,49 @@ public class DetailFragment extends Fragment {
 
         }
     }
+    private class GetCoinTask extends AsyncTask<Void, Void, List<Coin>> {
+        @Override
+        protected List<Coin> doInBackground(Void... voids){
+            try{
+                Log.d(TAG, "soInBackground: SUCCESS");
+                Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.coinlore.net/").addConverterFactory(GsonConverterFactory.create()).build();
+
+                //get service and call object for the request
+                CoinService service = retrofit.create(CoinService.class);
+                Call<CoinLoreResponse> coinsCall = service.getCoins();
+
+                //execute network request
+                Response<CoinLoreResponse> coinResponse = coinsCall.execute();
+                List<Coin> coins = coinResponse.body().getData();
+                return coins;
+            }catch (IOException e){
+                Log.d(TAG, "onFailure: FAILURE");
+                e.printStackTrace();
+                return null;
+            }
+        }
+        @Override
+        protected void onPostExecute(List<Coin> coins){
+            for(Coin coin : coins){
+                if(coin.getId().equals(getArguments().getString(ARG_ITEM_ID))){
+                    mCoin = coin;
+                    updateUi();
+                    break;
+                }
+            }
+            DetailFragment.this.getActivity().setTitle(mCoin.getName());
+            //mAdapter.setCoins(coins);
+        }
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
-
         return rootView;
     }
+
     private void updateUi(){
         View rootView = getView();
         if (mCoin != null) {

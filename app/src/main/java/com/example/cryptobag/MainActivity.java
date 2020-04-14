@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 //import android.content.Intent;
 import android.nfc.Tag;
+import android.os.AsyncTask;
 import android.os.Bundle;
 //import android.view.View;
 import android.util.Log;
@@ -58,18 +59,19 @@ public class MainActivity extends AppCompatActivity {
         //List<Coin> coins = response.getData();
         mAdapter = new CoinAdapter(this, new ArrayList<Coin>(), mTwoPane);
         mRecyclerView.setAdapter(mAdapter);
+        new GetCoinTask().execute();
         //try {
             //create Retrofit instance & parse the retrieved Json using the Gson deserializer
-            Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.coinlore.net/").addConverterFactory(GsonConverterFactory.create()).build();
+            //Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.coinlore.net/").addConverterFactory(GsonConverterFactory.create()).build();
 
             //get service and call object for the request
-            CoinService service = retrofit.create(CoinService.class);
-            Call<CoinLoreResponse> coinsCall = service.getCoins();
-
+           // CoinService service = retrofit.create(CoinService.class);
+            //Call<CoinLoreResponse> coinsCall = service.getCoins();
+           // new GetCoinTask().execute();
             //execute network request
             //Response<CoinLoreResponse> coinsResponse = coinsCall.execute();
             //List<Coin> coins = coinsResponse.body().getData();
-            coinsCall.enqueue(new Callback<CoinLoreResponse>() {
+            /*coinsCall.enqueue(new Callback<CoinLoreResponse>() {
                 @Override
                 public void onResponse(Call<CoinLoreResponse> call, Response<CoinLoreResponse> response) {
                     //if(response.isSuccessful()){
@@ -85,7 +87,9 @@ public class MainActivity extends AppCompatActivity {
                 public void onFailure(Call<CoinLoreResponse> call, Throwable t) {
                     Log.d(TAG, "onFailure: FAILURE IS " + t.getLocalizedMessage());
                 }
-            });
+            });*/
+
+
 
             //connect recyclerView adapter with the retrieved data
             //mAdapter.setCoins(coins);
@@ -96,6 +100,32 @@ public class MainActivity extends AppCompatActivity {
 
 
         //mRecyclerView.setAdapter(mAdapter);
+    }
+    private class GetCoinTask extends AsyncTask<Void, Void, List<Coin>>{
+        @Override
+        protected List<Coin> doInBackground(Void... voids){
+            try{
+                Log.d(TAG, "soInBackground: SUCCESS");
+                Retrofit retrofit = new Retrofit.Builder().baseUrl("https://api.coinlore.net/").addConverterFactory(GsonConverterFactory.create()).build();
+
+                //get service and call object for the request
+                CoinService service = retrofit.create(CoinService.class);
+                Call<CoinLoreResponse> coinsCall = service.getCoins();
+
+                //execute network request
+                Response<CoinLoreResponse> coinResponse = coinsCall.execute();
+                List<Coin> coins = coinResponse.body().getData();
+                return coins;
+            }catch (IOException e){
+                Log.d(TAG, "onFailure: FAILURE");
+                e.printStackTrace();
+                return null;
+            }
+        }
+        @Override
+        protected void onPostExecute(List<Coin> coins){
+            mAdapter.setCoins(coins);
+        }
     }
 }
     /*private void launchDetailActivity(int position) {
